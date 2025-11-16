@@ -11,8 +11,37 @@ const firebaseConfig = {
 };
 // =====================================================
 
+// 1. Initialize Firebase
 firebase.initializeApp(firebaseConfig);
+
+// 2. Get a reference to the Authentication service
+const auth = firebase.auth(); // Now 'auth' is your control panel for Authentication
+
+// 3. Get a reference to the Realtime Database service
 const db = firebase.database();
+
+// 4. NOW, you use methods on the 'auth' object to sign in a user.
+//    For example, to sign in anonymously (creates a temporary user):
+auth.signInAnonymously()
+  .then(() => {
+    // User is signed in!
+    console.log("User signed in anonymously!");
+    // At this point, if you try to access the database,
+    // the Security Rules will see 'auth != null' as true.
+  })
+  .catch((error) => {
+    console.error("Error signing in anonymously:", error);
+  });
+
+// Or, for email/password:
+// auth.signInWithEmailAndPassword("user@example.com", "password123")
+//   .then((userCredential) => {
+//     console.log("User signed in:", userCredential.user.uid);
+//   })
+//   .catch((error) => {
+//     console.error("Error signing in:", error);
+//   });
+
 
 const markersContainer = document.getElementById('markers');
 const refreshBtn = document.getElementById('refreshBtn');
@@ -118,13 +147,14 @@ function updateUserQueueStatus(bathroomId, position) {
   const bathroomName = document.getElementById('queue-bathroom-name');
   const queuePosition = document.getElementById('queue-position');
 
-  if (bathroomId && position !== null) {
+  if (bathroomId != null && position != null) {
     queueStatus.classList.remove('hidden');
     bathroomName.innerText = bathrooms[bathroomId].name;
     queuePosition.innerText = position + 1; // Convert zero-based index to 1-based
   } else {
     queueStatus.classList.add('hidden');
   }
+
 }
 
 // Utility to remove users from the queue after 8 minutes
@@ -311,6 +341,10 @@ leaveBtn.addEventListener('click', async () => {
   const ref = db.ref(`bathrooms/${currentBathId}/queue`);
   const snap = await ref.once('value');
   let q = snap.val() || [];
+  if (!Array.isArray(q)) {
+    q = Object.values(q);
+  }
+  
   q = q.filter(user => user.name !== username);
   await ref.set(q);
 
