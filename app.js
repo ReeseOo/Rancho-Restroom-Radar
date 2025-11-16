@@ -101,6 +101,12 @@ adminLogoutBtn.addEventListener('click', () => {
 // Disable admin privileges by default on page load
 disableAdminPrivileges();
 
+joinBtn.addEventListener("click", () => {
+  if (!currentBathId) return;
+  joinQueue(currentBathId);
+});
+
+
 // Utility to create markers on map from DB data
 function renderMarkers() {
   markersContainer.innerHTML = '';
@@ -130,16 +136,19 @@ function renderMarkers() {
 
 // Utility to check if a user is already in a queue
 async function isUserInQueue() {
-  const snapshot = await db.ref('bathrooms').once('value');
-  const bathroomsData = snapshot.val() || {};
-  for (const id in bathroomsData) {
-    const queue = bathroomsData[id].queue || [];
-    if (queue.some(user => user.name === username)) {
-      return id; // Return the bathroom ID where the user is in the queue
+  const uid = auth.currentUser.uid;
+  const snap = await db.ref("bathrooms").once("value");
+  const rooms = snap.val();
+
+  for (let bathId in rooms) {
+    if (rooms[bathId].queue && rooms[bathId].queue[uid]) {
+      return bathId;
     }
   }
+
   return null;
 }
+
 
 // Utility to update the user's queue status display
 function updateUserQueueStatus(bathroomId, position) {
@@ -312,45 +321,54 @@ function populateModal(id){
 }
 
 // Join queue
-joinBtn.addEventListener('click', async () => {
-  if (!currentBathId) return;
+async function joinQueue(bathId) {
+  const uid = auth.currentUser.uid;
 
-  // Check if the user is already in another queue
-  const existingQueueId = await isUserInQueue();
-  if (existingQueueId) {
-    alert(`You are already in the queue for ${bathrooms[existingQueueId].name}. Please leave that queue first.`);
+  // 1. Check if user is already in ANY queue
+  const existing = await isUserInQueue();
+  if (existing) {
+    alert("You are already in another queue.");
     return;
   }
 
-  const ref = db.ref(`bathrooms/${currentBathId}/queue`);
-  const snap = await ref.once('value');
-  let q = snap.val() || [];
-  if (q.some(user => user.name === username)) return;
+  const ref = db.ref(`bathrooms/${bathId}/queue/${uid}`);
 
-  q.push({ name: username, timestamp: Date.now() });
-  await ref.set(q);
+  await ref.set({
+    name: username,
+    timestamp: Date.now()
+  });
 
-  // Update the user's queue status
-  updateUserQueueStatus(currentBathId, q.length - 1);
-});
+  const position = await getUserQueuePosition(bathId, uid);
+  updateUserQueueStatus(bathId, position);
+}
+
 
 // Leave queue
-leaveBtn.addEventListener('click', async () => {
-  if (!currentBathId) return;
+async function leaveQueue(bathId) {
+  const uid = auth.currentUser.uid;
+  await db.ref(`bathrooms/${bathId}/queue/${uid}`).remove();
+}
 
-  const ref = db.ref(`bathrooms/${currentBathId}/queue`);
-  const snap = await ref.once('value');
-  let q = snap.val() || [];
-  if (!Array.isArray(q)) {
-    q = Object.values(q);
+async function getUserQueuePosition(bathId, uid) {
+  const snap = await db.ref(`bathrooms/${bathId}/queue`).once("value");
+
+  const queue = snap.val();
+  if (!queue) return null;
+
+  // Convert object → array and sort by timestamp
+  const sorted = Object.entries(queue)
+    .sort((a, b) => a[1].timestamp - b[1].timestamp);
+
+  // Find user index
+  for (let i = 0; i < sorted.length; i++) {
+    const [key] = sorted[i];
+    if (key === uid) return i;
   }
-  
-  q = q.filter(user => user.name !== username);
-  await ref.set(q);
 
-  // Clear the user's queue status
-  updateUserQueueStatus(null, null);
-});
+  return null;
+}
+
+
 
 // Admin save
 saveAdmin.addEventListener('click', async () => {
