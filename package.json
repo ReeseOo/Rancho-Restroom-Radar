@@ -1,12 +1,6 @@
 {
   "dependencies": {
-    "firebase": "^12.6.0"
-  }
-}
-
-{
-  "rules": {
-    ".read": true,
-    ".write": true
+    "firebase": "^12.6.0",
+    "http-server": "^14.1.1"
   }
 }
