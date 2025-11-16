@@ -1,0 +1,12 @@
+{
+  "dependencies": {
+    "firebase": "^12.6.0"
+  }
+}
+
+{
+  "rules": {
+    ".read": true,
+    ".write": true
+  }
+}

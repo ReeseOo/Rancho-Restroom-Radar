@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Campus Loos — Bathroom Map</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- Firebase SDKs (Realtime DB) -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+</head>
+<body>
+  <div id="app">
+    <header>
+      <h1>Campus Loos</h1>
+      <button id="refreshBtn">Refresh</button>
+    </header>
+
+    <main>
+      <div id="map-container">
+        <img id="map-img" src="map.png" alt="school map" />
+        <!-- markers will be injected here -->
+        <div id="markers"></div>
+      </div>
+    </main>
+
+    <!-- modal -->
+    <div id="modal" class="hidden">
+      <div id="modal-card">
+        <button id="closeModal">×</button>
+        <h2 id="modal-title">Bathroom</h2>
+        <p id="modal-status">Status: </p>
+        <p id="modal-queue-count">Queue: 0</p>
+
+        <div id="queue-actions">
+          <button id="joinBtn">Join Queue</button>
+          <button id="leaveBtn" class="hidden">Leave Queue</button>
+        </div>
+
+        <div id="admin-area">
+          <label>Status:
+            <select id="adminStatus">
+              <option value="open">Open</option>
+              <option value="closed">Closed</option>
+              <option value="maintenance">Maintenance</option>
+            </select>
+          </label>
+          <button id="saveAdmin">Save (admin)</button>
+        </div>
+
+      </div>
+    </div>
+
+    <footer>
+      <small>Built for Student Hackpad — Demo mode</small>
+    </footer>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
